@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+from pathlib import Path
 
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -34,12 +35,14 @@ from teatro.constants import (
 from teatro.models import new_char, new_costume
 from teatro.scene_edits import remove_from_scenes, rename_in_scenes
 from teatro.ui.widgets import ColorButton
+from teatro.ui.import_model import import_model_dialog
 
 
 class CharsTab(QWidget):
-    def __init__(self, sh: dict, parent=None) -> None:
+    def __init__(self, sh: dict, show_dir: Path | None = None, parent=None) -> None:
         super().__init__(parent)
         self.sh = sh
+        self.show_dir = show_dir
         self._catalog = read_catalog(libreria_dir() / "catalogo.csv")
         self._by_id = {c.id: c for c in self._catalog}
         self._slot_combos: list[QComboBox] = []
@@ -137,9 +140,7 @@ class CharsTab(QWidget):
         mode_row.addWidget(QLabel("Il costume viene"))
         mode_row.addWidget(self.p_mode)
         self.btn_import = QPushButton("Importa modello 3D…")
-        self.btn_import.clicked.connect(
-            lambda: QMessageBox.information(self, "Import", "Import costume 3D: fase 3D.")
-        )
+        self.btn_import.clicked.connect(self._import_costume)
         mode_row.addWidget(self.btn_import)
         self.lbl_import = QLabel("")
         mid.addLayout(mode_row)
@@ -209,9 +210,8 @@ class CharsTab(QWidget):
         right.addWidget(QLabel("Anteprima 3D"))
         right.addWidget(
             QLabel(
-                "L’anteprima del personaggio montato dalla libreria\n"
-                "arriverà con la fase 3D (come in MATLAB).\n"
-                "I dati costume qui sotto vengono già salvati."
+                "Apri una scena e usa «Vista da pubblico» per l’anteprima 3D\n"
+                "con corpo e costumi dalla libreria."
             )
         )
         right.addStretch()
@@ -476,6 +476,18 @@ class CharsTab(QWidget):
             co["code"] = chr(ord("A") + qi)
         self._show_char(p)
         self.cos_list.setCurrentRow(0)
+
+    def _import_costume(self) -> None:
+        p, j = self._pi(), self._ci()
+        if p < 0 or j < 0 or not self.show_dir:
+            return
+        r = import_model_dialog(self, self.show_dir)
+        if not r:
+            return
+        fn, _, _ = r
+        self.sh["chars"][p]["costumes"][j]["mode"] = "import"
+        self.sh["chars"][p]["costumes"][j]["file"] = fn
+        self._show_costume(j)
 
     def _read_mode(self) -> None:
         if self._blocking:

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from PySide6.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
@@ -22,12 +24,14 @@ from teatro.constants import libreria_dir
 from teatro.models import new_element
 from teatro.scene_edits import remove_from_scenes, unique_el_name, used_in_scenes
 from teatro.ui.widgets import ColorButton
+from teatro.ui.import_model import import_model_dialog
 
 
 class ElementsTab(QWidget):
-    def __init__(self, sh: dict, parent=None) -> None:
+    def __init__(self, sh: dict, show_dir: Path | None = None, parent=None) -> None:
         super().__init__(parent)
         self.sh = sh
+        self.show_dir = show_dir
         catalog = read_catalog(libreria_dir() / "catalogo.csv")
         self._lib_scen: list[CatalogItem] = [c for c in catalog if c.cat == "Scenografia"]
         self._cur = -1
@@ -48,13 +52,7 @@ class ElementsTab(QWidget):
         b.clicked.connect(self._add_lib)
         col1.addWidget(b)
         imp = QPushButton("Importa modello 3D…")
-        imp.clicked.connect(
-            lambda: QMessageBox.information(
-                self,
-                "Import",
-                "Import .glb/.obj: previsto nella fase 3D (prossimo aggiornamento).",
-            )
-        )
+        imp.clicked.connect(self._add_import)
         col1.addWidget(imp)
 
         col2 = QVBoxLayout()
@@ -113,7 +111,7 @@ class ElementsTab(QWidget):
         self.e_how.textChanged.connect(self._read_el)
         col3.addWidget(QLabel("Come costruirlo"))
         col3.addWidget(self.e_how)
-        col3.addWidget(QLabel("Anteprima 3D: fase 3D (usa MATLAB per ora se serve)."))
+        col3.addWidget(QLabel("Anteprima 3D disponibile in finestra scena (vista platea)."))
         self._editors = [
             self.e_name,
             self.e_sx,
@@ -155,6 +153,21 @@ class ElementsTab(QWidget):
         if row < 0 or row >= len(els):
             return -1
         return row
+
+    def _add_import(self) -> None:
+        if not self.show_dir:
+            QMessageBox.warning(self, "Import", "Cartella spettacolo non disponibile.")
+            return
+        r = import_model_dialog(self, self.show_dir)
+        if not r:
+            return
+        fn, bb, nm = r
+        e = new_element()
+        e.update(name=unique_el_name(self.sh["elements"], nm), src="import", file=fn, size=list(bb), rgb=[0.6, 0.5, 0.4], tint=False)
+        self.sh["elements"].append(e)
+        self._cur = len(self.sh["elements"]) - 1
+        self._fill_list()
+        self.el_list.setCurrentRow(self._cur)
 
     def _add_lib(self) -> None:
         row = self.cat_list.currentRow()

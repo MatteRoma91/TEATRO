@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 
 from teatro.constants import BACKDROP_OPTIONS, THEATER_PRESET_VALUES, THEATER_PRESETS
 from teatro.theater import draw_stage_plan, fix_theater, quinte_step, quinte_width
+from teatro.ui.import_model import import_model_dialog
 
 
 class TheaterTab(QWidget):
@@ -138,14 +139,12 @@ class TheaterTab(QWidget):
                 self.back.blockSignals(False)
                 return
         elif text == "Modello 3D" and not th.get("backModel"):
-            QMessageBox.information(
-                self,
-                "Fondale",
-                "Import modello 3D sul fondale: disponibile nella prossima sotto-fase (file .glb/.obj).",
-            )
-            self.back.blockSignals(True)
-            self.back.setCurrentText(th.get("back", "Nero"))
-            self.back.blockSignals(False)
+            if self.show_dir and self._choose_back(silent=False):
+                th["back"] = "Modello 3D"
+            else:
+                self.back.blockSignals(True)
+                self.back.setCurrentText(th.get("back", "Nero"))
+                self.back.blockSignals(False)
             return
         th["back"] = text
         self._update_back_ui()
@@ -178,6 +177,17 @@ class TheaterTab(QWidget):
             self._update_back_ui()
             self._draw()
             return True
+        if th.get("back") == "Modello 3D" and self.show_dir:
+            r = import_model_dialog(self, self.show_dir)
+            if r:
+                th["backModel"] = r[0]
+                th["back"] = "Modello 3D"
+                self.back.blockSignals(True)
+                self.back.setCurrentText(th["back"])
+                self.back.blockSignals(False)
+                self._update_back_ui()
+                self._draw()
+                return True
         if not silent:
             QMessageBox.information(self, "Fondale", 'Scegli prima "Immagine" o "Modello 3D" come fondale.')
         return False

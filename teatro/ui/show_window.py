@@ -8,6 +8,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
+    QFileDialog,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -17,6 +18,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from teatro.pdf_export import export_full_script
 
 from teatro.mat_io import save_show
 from teatro.models import new_scene, roman
@@ -69,6 +72,7 @@ class ShowWindow(QWidget):
             ("▶ Apri scena", self._open_scene, True),
             ("Titolo / atto / numero", self._edit_scene, False),
             ("Elimina scena", self._del_scene, False),
+            ("Stampa copione PDF", self._print_script, False),
             ("Salva", self._save, False),
             ("◀ I miei spettacoli", self._back, False),
         ]:
@@ -205,6 +209,25 @@ class ShowWindow(QWidget):
         )
         if dlg.exec():
             self._refresh()
+
+    def _print_script(self) -> None:
+        if not self.show_dir or not self.sh:
+            return
+        if not self.sh.get("scenes"):
+            QMessageBox.warning(self, "Copione", "Lo spettacolo non ha scene.")
+            return
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Salva copione PDF",
+            str(self.show_dir / f"{self.sh.get('title', 'copione')}.pdf"),
+            "PDF (*.pdf)",
+        )
+        if path:
+            try:
+                export_full_script(Path(path), self.sh, self.show_dir)
+                QMessageBox.information(self, "Copione", f"PDF salvato:\n{path}")
+            except Exception as ex:
+                QMessageBox.critical(self, "Copione", str(ex))
 
     def _open_audio(self) -> None:
         if not self.show_dir:

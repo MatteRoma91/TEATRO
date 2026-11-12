@@ -132,6 +132,32 @@ def plot_objects_on_plan(ax, objects: list[dict], chars: list[dict]) -> None:
             ax.plot(x, y, "s", color=rgb, markersize=10, markeredgecolor="white", markeredgewidth=0.5)
 
 
+def zone_geom(zone: str, t: dict, p: np.ndarray | None = None) -> dict:
+    t = fix_theater(t)
+    p = np.array([0.0, 0.0]) if p is None else np.asarray(p, dtype=float)
+    w, d, p_proc = float(t["W"]), float(t["D"]), float(t["P"])
+    g = {"shape": "rect", "cx": 0.0, "cy": d / 2, "w": w, "h": d, "r": 1.0}
+    if zone == "Tutto il palco":
+        g["cy"], g["h"] = (d - p_proc) / 2, d + p_proc
+    elif zone == "Avanti":
+        g["cy"], g["h"] = (-p_proc + 0.4 * d) / 2, 0.4 * d + p_proc
+    elif zone == "Centro":
+        g["w"], g["h"], g["cy"] = 0.55 * w, 0.5 * d, 0.5 * d
+    elif zone == "Fondo":
+        g["cy"], g["h"] = 0.8 * d, 0.4 * d
+    elif zone == "Sinistra":
+        g["cx"], g["w"], g["cy"], g["h"] = -w / 3, w / 3, (d - p_proc) / 2, d + p_proc
+    elif zone == "Destra":
+        g["cx"], g["w"], g["cy"], g["h"] = w / 3, w / 3, (d - p_proc) / 2, d + p_proc
+    elif zone == "Fondale (ciclorama)":
+        g.update({"shape": "cyc", "cy": d - 0.15, "w": w + 2 * t["wing"], "h": 0.3})
+    elif zone == "Puntiforme (centro)":
+        g.update({"shape": "circle", "r": 1.1, "cy": d / 2})
+    elif zone == "Segue un personaggio":
+        g.update({"shape": "circle", "r": 0.6, "cx": p[0], "cy": p[1]})
+    return g
+
+
 def new_figure_stage(t: dict, objects: list | None = None, chars: list | None = None):
     fig, ax = plt.subplots(figsize=(8, 5))
     draw_stage_plan(ax, t, labels=False)

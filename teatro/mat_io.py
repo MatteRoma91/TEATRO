@@ -101,13 +101,37 @@ def _normalize_scene(sc: dict) -> dict:
         sc["objects"] = [_to_python(objs)]
     elif isinstance(objs, dict):
         sc["objects"] = [objs]
-    steps = []
+    steps_out = []
     for st in sc.get("steps", []):
+        if st is None:
+            steps_out.append([])
+            continue
         if isinstance(st, dict):
-            steps.append(st)
-        elif hasattr(st, "_fieldnames"):
-            steps.append(_to_python(st))
-    sc["steps"] = steps
+            steps_out.append([st])
+            continue
+        if hasattr(st, "_fieldnames"):
+            steps_out.append([_to_python(st)])
+            continue
+        if isinstance(st, (list, tuple)):
+            effs = []
+            for e in st:
+                if isinstance(e, dict):
+                    effs.append(e)
+                elif hasattr(e, "_fieldnames"):
+                    effs.append(_to_python(e))
+            steps_out.append(effs)
+            continue
+        if isinstance(st, np.ndarray) and st.dtype == object:
+            effs = []
+            for e in st.flatten():
+                if isinstance(e, dict):
+                    effs.append(e)
+                elif hasattr(e, "_fieldnames"):
+                    effs.append(_to_python(e))
+            steps_out.append(effs)
+        else:
+            steps_out.append([])
+    sc["steps"] = steps_out
     return sc
 
 

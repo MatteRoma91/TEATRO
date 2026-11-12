@@ -81,3 +81,11 @@ class MusicPlayer:
         if getattr(self, "_use_sound", False):
             return pygame.mixer.get_busy()
         return pygame.mixer.music.get_busy()
+
+    def seek(self, t: float) -> None:
+        t = max(0.0, t)
+        if getattr(self, "_use_sound", False) and hasattr(self, "_sound"):
+            self._sound.stop()
+            self._sound.play(start=int(t * 44100))
+        elif self._path:
+            pygame.mixer.music.play(start=float(t))
