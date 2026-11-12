@@ -19,6 +19,9 @@ class MusicPlayer:
         pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
         self._path: Path | None = None
         self._duration = 0.0
+        self._t0 = 0.0
+        self._offset = 0.0
+        self._paused_at: float | None = None
 
     @property
     def duration(self) -> float:
@@ -58,24 +61,45 @@ class MusicPlayer:
             return False
 
     def play(self) -> None:
+        if self._paused_at is not None:
+            self._offset = self._paused_at
+            self._paused_at = None
+        import time
+
+        self._t0 = time.monotonic() - self._offset
         if getattr(self, "_use_sound", False):
-            self._sound.play()
+            self._sound.play(start=int(self._offset * 44100))
         elif self._path:
-            pygame.mixer.music.play()
+            pygame.mixer.music.play(start=float(self._offset))
 
     def pause(self) -> None:
+        self._paused_at = self.current_time
         pygame.mixer.music.pause()
+        if getattr(self, "_use_sound", False) and hasattr(self, "_sound"):
+            self._sound.stop()
 
     def unpause(self) -> None:
         pygame.mixer.music.unpause()
 
     def stop(self) -> None:
+        self._offset = 0.0
+        self._paused_at = None
         pygame.mixer.music.stop()
         if hasattr(self, "_sound"):
             try:
                 self._sound.stop()
             except Exception:
                 pass
+
+    @property
+    def current_time(self) -> float:
+        if not self.is_playing() and self._paused_at is not None:
+            return self._paused_at
+        if not self.is_playing():
+            return self._offset
+        import time
+
+        return time.monotonic() - self._t0
 
     def is_playing(self) -> bool:
         if getattr(self, "_use_sound", False):
@@ -84,8 +108,19 @@ class MusicPlayer:
 
     def seek(self, t: float) -> None:
         t = max(0.0, t)
+        self._offset = t
+        self._paused_at = None
+        was = self.is_playing()
         if getattr(self, "_use_sound", False) and hasattr(self, "_sound"):
             self._sound.stop()
-            self._sound.play(start=int(t * 44100))
+            if was:
+                import time
+
+                self._t0 = time.monotonic() - t
+                self._sound.play(start=int(t * 44100))
         elif self._path:
-            pygame.mixer.music.play(start=float(t))
+            if was:
+                import time
+
+                self._t0 = time.monotonic() - t
+                pygame.mixer.music.play(start=float(t))

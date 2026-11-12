@@ -40,6 +40,129 @@ def path_point(pts: np.ndarray, u: float) -> np.ndarray:
     return p[k, :2] + f * (p[k + 1, :2] - p[k, :2])
 
 
+def simplify_path(p: np.ndarray) -> np.ndarray:
+    p = np.asarray(p, dtype=float)
+    if p.shape[0] <= 2:
+        return p
+    q = [p[0]]
+    for i in range(1, p.shape[0] - 1):
+        if np.linalg.norm(p[i] - q[-1]) >= 0.12:
+            q.append(p[i])
+    q.append(p[-1])
+    q = np.array(q)
+    if q.shape[0] > 40:
+        idx = np.round(np.linspace(0, q.shape[0] - 1, 40)).astype(int)
+        q = q[idx]
+    return q
+
+
+def act_summary(sc: dict, k: int) -> str:
+    if k < 1 or k > len(sc.get("steps", [])):
+        return ""
+    e = normalize_step(sc["steps"][k - 1])
+    objs = sc.get("objects", [])
+    ids = [o.get("id") for o in objs]
+    names = []
+    for ej in e:
+        try:
+            i = ids.index(ej.get("spid"))
+        except ValueError:
+            continue
+        o = objs[i]
+        cls = ej.get("cls")
+        if o.get("kind") == "light":
+            v = {"entr": "si accende", "exit": "si spegne"}.get(cls, "si sposta")
+            names.append(f"luce {o.get('label')} {v}")
+        else:
+            v = {"entr": "entra", "exit": "esce"}.get(cls, "si muove")
+            names.append(f"{o.get('label')} {v}")
+    return ", ".join(dict.fromkeys(names)) if names else "nessuna azione"
+
+
+def action_lines(sc: dict, k: int, theater: dict) -> list[str]:
+    if k < 1 or k > len(sc.get("steps", [])):
+        return []
+    e = normalize_step(sc["steps"][k - 1])
+    objs = sc.get("objects", [])
+    ids = [o.get("id") for o in objs]
+    lines = []
+    for ej in e:
+        try:
+            i = ids.index(ej.get("spid"))
+        except ValueError:
+            continue
+        o = objs[i]
+        nm = o.get("label", "")
+        cls = ej.get("cls")
+        if o.get("kind") == "light":
+            if cls == "path" and float(ej.get("dur", 0)) < 0.05:
+                continue
+            v = {"entr": "si accende", "exit": "si spegne"}.get(cls, "segue il percorso")
+            s = f"Luce {nm}: {v}"
+        else:
+            if cls == "entr":
+                v = "entra in scena"
+            elif cls == "exit":
+                v = "esce di scena"
+            else:
+                if float(ej.get("dur", 0)) < 0.05:
+                    continue
+                pts = np.asarray(ej.get("pts", [[0, 0]]))
+                p1 = np.array([o.get("x", 0), o.get("y", 0)]) + pts[-1]
+                v = f"va verso {zone_name(p1, theater)}"
+                if pts.shape[0] > 2:
+                    v += " (percorso libero)"
+            s = f"{nm}: {v}"
+        s = f"{s}  ({float(ej.get('dur', 0)):.1f} s"
+        if float(ej.get("delay", 0)) > 0:
+            s += f", dopo {float(ej.get('delay', 0)):.1f} s"
+        lines.append(s.replace(".", ",") + ")")
+    return lines or ["(nessuna azione)"]
+
+
+def fill_cues(t: np.ndarray, dur: float) -> np.ndarray:
+    t = np.array(t, dtype=float)
+    n = len(t)
+    if n == 0:
+        return t
+    known = np.where(~np.isnan(t))[0]
+    if known.size == 0:
+        lead = min(2.0, 0.05 * dur)
+        return lead + np.arange(n) * max(dur * 0.92 - lead, 1.0) / n
+    x = np.concatenate([[0], known + 1, [n + 1]])
+    y = np.concatenate(
+        [[min(0.5, t[known[0]] * 0.5)], t[known], [max(dur * 0.95, t[known[-1]] + 1)]]
+    )
+    miss = np.isnan(t)
+    if np.any(miss):
+        t[miss] = np.interp(np.arange(1, n + 1)[miss], x, y)
+    return t
+
+
+def fast_forward_state(sc: dict, m: int) -> tuple[np.ndarray, np.ndarray]:
+    """pos e alpha dopo m passi (per anteprima)."""
+    objs = sc.get("objects", [])
+    n = len(objs)
+    pos = np.zeros((n, 2))
+    alpha = np.array([1.0 if o.get("start") else 0.0 for o in objs])
+    ids = [o.get("id") for o in objs]
+    for k in range(min(m, len(sc.get("steps", [])))):
+        for e in normalize_step(sc["steps"][k]):
+            try:
+                i = ids.index(e.get("spid"))
+            except ValueError:
+                continue
+            cls = e.get("cls")
+            if cls == "path":
+                pts = np.asarray(e.get("pts", [[0, 0]]))
+                pos[i] = pts[-1]
+            elif cls == "entr":
+                alpha[i] = 1.0
+            elif cls == "exit":
+                alpha[i] = 0.0
+    return pos, alpha
+
+
 def ease(u: float) -> float:
     u = max(0.0, min(1.0, u))
     return 0.5 - 0.5 * math.cos(math.pi * u)

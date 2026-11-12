@@ -65,3 +65,36 @@ class ScenePlan2D:
                     rect = mpatches.Rectangle((x - w / 2, y - h / 2), w, h, facecolor=o.get("rgb", [1, 1, 0.5]), alpha=0.26 * a)
                     self.ax.add_patch(rect)
                     self._patches.append(rect)
+
+    def draw_fixed(self, sh: dict) -> None:
+        """Elementi scenografici fissi (tratteggio)."""
+        for e in sh.get("elements", []):
+            if not e.get("fixed"):
+                continue
+            x, y = float(e.get("x", 0)), float(e.get("y", 0))
+            w, d = max(float(e.get("size", [1, 1, 1])[0]), 0.1), max(float(e.get("size", [1, 1, 1])[1]), 0.1)
+            rot = np.radians(float(e.get("rot", 0)))
+            c = np.array([[-w, -d], [w, -d], [w, d], [-w, d]]) / 2
+            rm = np.array([[np.cos(rot), -np.sin(rot)], [np.sin(rot), np.cos(rot)]])
+            c = c @ rm.T + np.array([x, y])
+            rgb = np.array(e.get("rgb", [0.6, 0.5, 0.38]) if e.get("tint") else [0.6, 0.5, 0.38])
+            poly = mpatches.Polygon(
+                c,
+                facecolor=0.5 + 0.5 * rgb,
+                edgecolor=rgb * 0.6,
+                linestyle="--",
+                alpha=0.55,
+                fill=True,
+            )
+            self.ax.add_patch(poly)
+            self._patches.append(poly)
+
+    def draw_setup(self, sh: dict, sc: dict) -> None:
+        """Solo oggetti con start=True + fissi."""
+        objs = sc.get("objects", [])
+        n = len(objs)
+        pos = np.zeros((n, 2))
+        alpha = np.array([1.0 if o.get("start") else 0.0 for o in objs])
+        self.draw(sh, sc, pos, alpha)
+        self.draw_fixed(sh)
+        self.ax.set_title("Posizioni all'inizio della scena  (pubblico in basso)", color="#d4b059", fontsize=11)

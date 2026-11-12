@@ -24,6 +24,8 @@ from teatro.pdf_export import export_full_script
 from teatro.mat_io import save_show
 from teatro.models import new_scene, roman
 from teatro.shows import find_music_file
+from teatro.scene_commit import commit_scene
+from teatro.ui.scene_setup_dialog import SceneSetupDialog
 from teatro.ui.scene_window import SceneWindow
 from teatro.ui.settings_dialog import SettingsDialog
 
@@ -71,6 +73,7 @@ class ShowWindow(QWidget):
             ("+ Nuova scena", self._new_scene, True),
             ("▶ Apri scena", self._open_scene, True),
             ("Titolo / atto / numero", self._edit_scene, False),
+            ("Imposta scena", self._setup_scene, False),
             ("Elimina scena", self._del_scene, False),
             ("Stampa copione PDF", self._print_script, False),
             ("Salva", self._save, False),
@@ -168,6 +171,22 @@ class ShowWindow(QWidget):
     def _on_dirty(self) -> None:
         if self.show_dir and self.sh:
             save_show(self.show_dir, self.sh)
+
+    def _setup_scene(self) -> None:
+        i = self._scene_index()
+        if i < 0 or not self.sh:
+            return
+        sc = self.sh["scenes"][i]
+
+        def on_save(sc2: dict) -> None:
+            self.sh = commit_scene(self.sh, i, sc2)
+            self._save()
+            self._refresh()
+            if self._scene_win and self._scene_win.isVisible() and self._scene_win.idx == i:
+                self._scene_win.sh = self.sh
+                self._scene_win.go_scene(i)
+
+        SceneSetupDialog(self, self.sh, sc, on_save).exec()
 
     def _edit_scene(self) -> None:
         i = self._scene_index()

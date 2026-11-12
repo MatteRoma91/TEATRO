@@ -39,16 +39,18 @@ Build locale Windows: `pyinstaller teatroapp.spec`
 
 ---
 
-## Stato funzioni (v0.3)
+## Stato funzioni (v0.4)
 
 | Area | Stato |
 |------|--------|
 | Gestione spettacoli, zip, import `.mat` MATLAB | ✅ |
 | Impostazioni: teatro, luci, scenografia, personaggi | ✅ |
 | Scene: pianta, **vista 3D platea**, montaggio, passi, audio | ✅ |
+| **Imposta scena** (personaggi, elementi, luci iniziali) | ✅ |
+| **Elenco passi** + **editor passi** (movimenti, entrate, luci) | ✅ |
+| **Registra tempi** (barra spaziatrice) + **tabella tempi passi** + sync | ✅ |
 | **PDF** copione e passi scena | ✅ |
 | **Import GLB/OBJ** (scenografia, costumi, fondale) | ✅ |
-| Editor passi avanzato, imposta scena GUI, registrazione cue | 🚧 (in MATLAB già completo; in Python in arrivo) |
 
 ---
 

@@ -10,6 +10,7 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from PySide6.QtCore import Qt, QTimer, Signal
+from PySide6.QtGui import QKeyEvent
 from PySide6.QtWidgets import (
     QFileDialog,
     QHBoxLayout,
@@ -24,8 +25,9 @@ from PySide6.QtWidgets import (
 )
 
 from teatro.audio_player import MusicPlayer
-from teatro.cues import load_cues
+from teatro.cues import load_cues, save_cues
 from teatro.models import roman
+from teatro.scene_commit import commit_scene
 from teatro.parts3d import PartsCache
 from teatro.pdf_export import export_scene_pdf
 from teatro.plan2d import ScenePlan2D
@@ -33,10 +35,14 @@ from teatro.scene_logic import (
     apply_effects_at_time,
     cue_text,
     describe_step,
+    fast_forward_state,
+    fill_cues,
     normalize_step,
-    state_at,
     step_duration,
 )
+from teatro.ui.cue_table_dialog import CueTableDialog
+from teatro.ui.scene_setup_dialog import SceneSetupDialog
+from teatro.ui.step_list_dialog import StepListDialog
 from teatro.shows import find_music_file
 from teatro.stage3d import draw_stage_3d
 
@@ -64,6 +70,15 @@ class SceneWindow(QWidget):
         self._anim_a0 = np.zeros(0)
         self._timer = QTimer(self)
         self._timer.timeout.connect(self._on_tick)
+        self._sync_timer = QTimer(self)
+        self._sync_timer.timeout.connect(self._on_sync_tick)
+        self._cue_t = np.array([])
+        self._cue_k0 = 1
+        self._syncing = False
+        self._recording = False
+        self._rec_t: np.ndarray | None = None
+        self._auto_chain = False
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self._build()
 
     def _build(self) -> None:
@@ -79,6 +94,20 @@ class SceneWindow(QWidget):
         self.btn_next.clicked.connect(lambda: self.go_scene(self.idx + 1))
         top.addWidget(self.btn_next)
         lay.addLayout(top)
+        bar = QHBoxLayout()
+        for label, slot, bold in [
+            ("Elenco passi", self._open_steps, True),
+            ("Imposta scena", self._open_setup, False),
+        ]:
+            b = QPushButton(label)
+            if bold:
+                f = b.font()
+                f.setBold(True)
+                b.setFont(f)
+            b.clicked.connect(slot)
+            bar.addWidget(b)
+        bar.addStretch()
+        lay.addLayout(bar)
         self.sub_lbl = QLabel("")
         self.sub_lbl.setStyleSheet("color:#b3aba0;")
         lay.addWidget(self.sub_lbl)
@@ -102,6 +131,12 @@ class SceneWindow(QWidget):
         self.btn_view.setStyleSheet("font-weight:bold;")
         self.btn_view.clicked.connect(self._toggle_view)
         side.addWidget(self.btn_view)
+        self.btn_rec = QPushButton("● Registra")
+        self.btn_rec.clicked.connect(self._toggle_record)
+        side.addWidget(self.btn_rec)
+        self.btn_cues = QPushButton("Tempi passi")
+        self.btn_cues.clicked.connect(self._open_cues)
+        side.addWidget(self.btn_cues)
         for label, slot in [
             ("▶▶ Montaggio", self._run_montaggio),
             ("Passo singolo", self._run_step),
@@ -188,6 +223,8 @@ class SceneWindow(QWidget):
 
     def _reset(self) -> None:
         self._timer.stop()
+        self._sync_timer.stop()
+        self._syncing = False
         self._step = 0
         self._pos = np.zeros((len(self._objs), 2))
         self._alpha = np.array([1.0 if o.get("start") else 0.0 for o in self._objs])
@@ -238,14 +275,188 @@ class SceneWindow(QWidget):
                 else:
                     self._auto_chain = False
 
-    def _sync(self) -> None:
+    def _sync(self, k0: int = 1) -> None:
+        if self._recording:
+            self._stop_recording(True)
         mp = self._music_path()
         if not mp or not self._player.load(mp):
             QMessageBox.warning(self, "Sync", "Carica prima la canzone della scena.")
             return
+        sc = self._sc()
+        n = len(sc.get("steps", []))
+        if n == 0:
+            self._player.play()
+            return
         self._reset()
+        t, _e = load_cues(self.show_dir, sc)
+        dur = self._player.duration
+        if np.any(~np.isnan(t)):
+            tk = fill_cues(t, dur)
+            how = "tempi registrati"
+        else:
+            tk = fill_cues(np.full(n, np.nan), dur)
+            how = "distribuiti in modo uniforme"
+        k0 = max(1, min(k0, n))
+        if k0 > 1:
+            self._fast_forward(k0 - 1)
+        t0 = 0.0 if k0 <= 1 else max(0.0, float(tk[k0 - 1]) - 3.0)
+        self._player.seek(t0)
         self._player.play()
-        self._auto_chain = True
+        self._syncing = True
+        self._cue_t = tk
+        self._cue_k0 = k0
+        self._sync_step = k0
+        self.comment.append(f"\nSync: {n} passi, {how}.")
+        self._sync_timer.start(40)
+
+    def _on_sync_tick(self) -> None:
+        if not self._syncing:
+            return
+        sc = self._sc()
+        n = len(sc.get("steps", []))
+        if self._sync_step > n:
+            self._sync_timer.stop()
+            self._syncing = False
+            return
+        if self._running:
+            return
+        t = self._player.current_time
+        if self._sync_step <= n and t >= self._cue_t[self._sync_step - 1]:
+            self._auto_chain = False
+            self._run_step()
+            self._sync_step += 1
+        if self._sync_step > n and not self._running:
+            self._sync_timer.stop()
+            self._syncing = False
+        if not self._player.is_playing() and not self._running:
+            self._sync_timer.stop()
+            self._syncing = False
+
+    def _fast_forward(self, m: int) -> None:
+        sc = self._sc()
+        pos, alpha = fast_forward_state(sc, m)
+        self._pos = pos
+        self._alpha = alpha
+        self._step = m
+        self._draw()
+
+    def _toggle_record(self) -> None:
+        if self._recording:
+            self._stop_recording(True)
+            return
+        if self._running or self._syncing:
+            return
+        sc = self._sc()
+        n = len(sc.get("steps", []))
+        if n == 0:
+            QMessageBox.information(self, "Registra", "Questa scena non ha passi da sincronizzare.")
+            return
+        mp = self._music_path()
+        if not mp or not self._player.load(mp):
+            QMessageBox.warning(self, "Registra", "Carica prima la canzone della scena.")
+            return
+        self._reset()
+        t, e = load_cues(self.show_dir, sc)
+        self._recording = True
+        self._rec_t = np.full(n, np.nan)
+        self._rec_e = e.copy() if e.size == n else np.full(n, np.nan)
+        self.btn_rec.setText("■ Stop")
+        self.btn_rec.setStyleSheet("color:#c02020;font-weight:bold;")
+        self.comment.setPlainText(
+            f"REGISTRAZIONE TEMPI — {sc.get('title','')}\n\n"
+            "Premi la BARRA SPAZIATRICE quando deve partire ogni passo.\n"
+            f"Passi da segnare: {n}.  Esc o Stop per terminare.\n\n"
+            f"Prossimo: 1  {cue_text(sc, 1)}"
+        )
+        self._player.play()
+        self._rec_watch = QTimer(self)
+        self._rec_watch.timeout.connect(self._on_rec_poll)
+        self._rec_watch.start(50)
+
+    def _on_rec_poll(self) -> None:
+        if not self._recording or self._rec_t is None:
+            return
+        sc = self._sc()
+        n = len(sc.get("steps", []))
+        done = int(np.sum(~np.isnan(self._rec_t)))
+        if done > self._step and not self._running:
+            self._run_step()
+            if self._step < n:
+                self.comment.append(f"\nProssimo: {self._step + 1}  {cue_text(sc, self._step + 1)}")
+        if self._step >= n and not self._running:
+            QTimer.singleShot(500, lambda: self._stop_recording(True))
+        elif not self._player.is_playing() and not self._running and done == self._step:
+            self._stop_recording(True)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        if self._recording and event.key() == Qt.Key.Key_Space:
+            self._mark_cue()
+            event.accept()
+            return
+        if event.key() == Qt.Key.Key_Escape and self._recording:
+            self._stop_recording(True)
+            return
+        super().keyPressEvent(event)
+
+    def _mark_cue(self) -> None:
+        if not self._recording or self._rec_t is None:
+            return
+        miss = np.where(np.isnan(self._rec_t))[0]
+        if miss.size == 0:
+            return
+        k = int(miss[0])
+        self._rec_t[k] = self._player.current_time
+
+    def _stop_recording(self, save: bool) -> None:
+        if not self._recording:
+            return
+        self._recording = False
+        if hasattr(self, "_rec_watch"):
+            self._rec_watch.stop()
+        self._player.stop()
+        self.btn_rec.setText("● Registra")
+        self.btn_rec.setStyleSheet("")
+        if save and self._rec_t is not None:
+            done = int(np.sum(~np.isnan(self._rec_t)))
+            if done > 0:
+                save_cues(self.show_dir, self._sc(), self._rec_t, self._rec_e)
+                self.comment.append(f"\nSalvati {done} tempi su {len(self._rec_t)}.")
+                self.music_lbl.setText(self.music_lbl.text() + "  (tempi registrati)")
+
+    def _open_setup(self) -> None:
+        if not self.sh:
+            return
+        dlg = SceneSetupDialog(self, self.sh, self._sc(), self._apply_scene)
+        dlg.exec()
+
+    def _open_steps(self) -> None:
+        if not self.show_dir or not self.sh:
+            return
+        dlg = StepListDialog(self, self.show_dir, self.sh, self.idx, self._apply_show, self._try_step_k)
+        dlg.exec()
+
+    def _open_cues(self) -> None:
+        if not self.show_dir or not self.sh:
+            return
+        dlg = CueTableDialog(self, self.show_dir, self.sh, self.idx, self._player, lambda k: self._sync(k))
+        dlg.exec()
+
+    def _apply_scene(self, sc: dict) -> None:
+        self.sh = commit_scene(self.sh, self.idx, sc)
+        if self._on_dirty:
+            self._on_dirty()
+        self.go_scene(self.idx)
+
+    def _apply_show(self, sh: dict) -> None:
+        self.sh = sh
+        if self._on_dirty:
+            self._on_dirty()
+        self.go_scene(self.idx)
+
+    def _try_step_k(self, k: int) -> None:
+        self._reset()
+        self._fast_forward(k - 1)
+        self._auto_chain = False
         self._run_step()
 
     def _music_path(self) -> Path | None:
@@ -286,13 +497,19 @@ class SceneWindow(QWidget):
                 QMessageBox.critical(self, "PDF", str(ex))
 
     def _close_to_show(self) -> None:
+        if self._recording:
+            self._stop_recording(True)
         self._timer.stop()
+        self._sync_timer.stop()
         self._player.stop()
         self.hide()
         self.closed.emit()
 
     def closeEvent(self, event) -> None:
+        if self._recording:
+            self._stop_recording(True)
         self._timer.stop()
+        self._sync_timer.stop()
         self._player.stop()
         self.closed.emit()
         super().closeEvent(event)
