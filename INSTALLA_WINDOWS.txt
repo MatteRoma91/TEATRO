@@ -1,0 +1,23 @@
+TeatroApp su Windows — SmartScreen e antivirus
+==============================================
+
+Editore sconosciuto
+  È normale: l'exe non ha firma digitale a pagamento. Su SmartScreen:
+  "Ulteriori informazioni" → "Esegui comunque".
+  Non serve "Esegui come amministratore".
+
+Cartella dopo l'estrazione
+  Deve restare TUTTA la cartella estratta, non solo TeatroApp.exe:
+    TeatroApp.exe
+    _internal\     (obbligatoria: contiene libreria e programma)
+    spettacoli\    (si crea/usa per i tuoi spettacoli)
+
+Se l'icona sparisce dopo pochi secondi
+  Spesso Windows Defender ha messo in quarantena TeatroApp.exe.
+  Impostazioni → Privacy e sicurezza → Sicurezza di Windows →
+  Protezione da virus e minacce → Cronologia protezione →
+  ripristina TeatroApp.exe e aggiungi esclusione per la cartella TeatroApp.
+
+Se non si apre nulla
+  Controlla che esista:  _internal\libreria\catalogo.csv
+  Se manca, riestrai lo zip completo.

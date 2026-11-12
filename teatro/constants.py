@@ -98,17 +98,32 @@ ZONES = (
 
 
 def app_root() -> Path:
-    """Cartella radice dell'app (accanto a libreria/ e spettacoli/)."""
+    """Cartella con TeatroApp.exe e spettacoli/ (dati utente)."""
     import sys
 
     if getattr(sys, "frozen", False):
         return Path(sys.executable).resolve().parent
-    # teatro/constants.py -> teatro -> TeatroApp-python
     return Path(__file__).resolve().parent.parent
 
 
+def bundle_root() -> Path:
+    """Risorse incluse nel pacchetto (PyInstaller 6: sotto _internal/)."""
+    import sys
+
+    if getattr(sys, "frozen", False):
+        base = Path(sys.executable).resolve().parent
+        internal = base / "_internal"
+        if internal.is_dir():
+            return internal
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            return Path(meipass)
+        return base
+    return app_root()
+
+
 def libreria_dir() -> Path:
-    return app_root() / "libreria"
+    return bundle_root() / "libreria"
 
 
 def spettacoli_dir() -> Path:

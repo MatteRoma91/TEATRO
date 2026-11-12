@@ -30,6 +30,11 @@ jobs:
       - name: Build with PyInstaller
         run: pyinstaller teatroapp.spec --noconfirm
 
+      - name: Docs accanto all'exe
+        run: |
+          copy INSTALLA_WINDOWS.txt dist\TeatroApp\
+          copy LEGGIMI.txt dist\TeatroApp\
+
       - name: Create portable ZIP
         shell: pwsh
         run: |
@@ -56,7 +61,10 @@ jobs:
 
             1. Scarica `TeatroApp-*-Windows-x64.zip`
             2. Estrai in una cartella (es. `C:\TeatroApp`)
-            3. Avvia `TeatroApp.exe`
+            3. Avvia `TeatroApp.exe` (non spostare solo l'exe: serve anche `_internal\`)
+
+            SmartScreen «Editore sconosciuto»: **Ulteriori informazioni** → **Esegui comunque**.
+            Se l'icona sparisce, controlla Windows Defender (vedi `INSTALLA_WINDOWS.txt` nello zip).
 
             I tuoi spettacoli si salvano nella sottocartella `spettacoli\`.
           files: TeatroApp-*-Windows-x64.zip
