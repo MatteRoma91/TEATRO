@@ -1,0 +1,13 @@
+---
+description: TEATRO repo — build Windows, PyInstaller _internal, parità MATLAB
+alwaysApply: true
+---
+
+# TeatroApp (TEATRO)
+
+- Repository GitHub: **MatteRoma91/TEATRO** — push su `main` genera exe Windows via `.github/workflows/release-windows.yml`.
+- Non committare `dist/`, `.venv`, `.exe`, credenziali.
+- Dopo fix utente: bump `teatro/__init__.py` `__version__`.
+- PyInstaller: risorse in `_internal/` — usare `bundle_root()` / `libreria_dir()` da `teatro.constants`.
+- Riferimento MATLAB: `aleporrari93/TeatroApp` / `TeatroApp.m`.
+- Leggere `AGENTS.md` e `docs/COLLABORAZIONE.md` per flusso collaboratore e Claude.

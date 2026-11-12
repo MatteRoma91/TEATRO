@@ -37,6 +37,14 @@ python main.py
 
 Build locale Windows: `pyinstaller teatroapp.spec`
 
+### Collaboratori (Claude / Cursor / bugfix)
+
+Per chi deve **modificare il codice** e **generare da solo gli exe** (GitHub Actions dopo ogni push su `main`):
+
+1. Il proprietario ti aggiunge come **Collaborator** su [TEATRO](https://github.com/MatteRoma91/TEATRO) (permesso **Write**).
+2. Clona il repo, apri la cartella in **Cursor** o **Claude Code**.
+3. Segui **[docs/COLLABORAZIONE.md](docs/COLLABORAZIONE.md)** e **[AGENTS.md](AGENTS.md)** (istruzioni per l’AI e checklist release).
+
 ---
 
 ## Stato funzioni (v0.4)
