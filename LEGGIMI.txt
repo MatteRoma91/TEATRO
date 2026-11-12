@@ -1,0 +1,46 @@
+TEATRO - regia di spettacoli in MATLAB
+======================================
+
+AVVIO
+  Apri MATLAB nella cartella TeatroApp e scrivi:   TeatroApp
+  (MATLAB R2016b o successivo. La cartella "libreria" deve restare accanto a TeatroApp.m.)
+
+FINESTRA INIZIALE
+  Elenco dei tuoi spettacoli. Nuovo, Apri (doppio clic), Duplica, Rinomina, Elimina,
+  Esporta / Importa in .zip. "Crea spettacolo di esempio" ne prepara uno gia' pronto da provare.
+  Ogni spettacolo e' una cartella in "spettacoli" e si salva da solo.
+
+NUOVO SPETTACOLO (4 schede, poi modificabili quando vuoi)
+  1. Teatro: larghezza, profondita' totale (proscenio compreso), altezza, numero di quinte, proscenio.
+     La distanza e la larghezza delle quinte sono calcolate da sole.
+     Fondale: nero, ciclorama, grigio, un'immagine (jpg/png) oppure un modello 3D (.glb/.obj).
+  2. Luci: scegli dalla libreria (piazzati, PAR, controluce, sagomatori, seguipersona...),
+     con quantita', colore e zona. "Segue un personaggio" = occhio di bue.
+  3. Scenografia: elementi predefiniti (telo americano, pallet, cubi su ruote, praticabili,
+     scale, panche, sedie, tavoli, porte, pannelli...) oppure importati (.glb, .obj).
+     Misure, colore, "fisso" (sempre in scena), occorrente e come costruirlo.
+  4. Personaggi: nome, colore della pedina, corpo (uomo/donna), altezza, pelle, occhi.
+     Costumi A, B, C...: capi della libreria (t-shirt, camicia, maglione, gilet, giacca,
+     giubbotto, cappotto, mantello, jeans, pantaloni, gonne, abiti, scarpe, stivali, tacchi,
+     cappelli, cintura, sciarpa), ognuno con il suo colore; capelli (corti, pettinati,
+     medi, lisci, mossi, raccolti, dreadlocks), barba e baffi, sopracciglia, rossetto,
+     rimmel, ombretto, fard. Oppure un modello 3D importato.
+
+SCENE
+  "+ Nuova scena": atto, numero della scena, titolo. Poi "Imposta scena": chi c'e' all'inizio,
+  con che costume, dove (clic sulla pianta) e quali luci sono accese.
+  Aprendo la scena: Elenco passi (aggiungi, modifica, percorsi, luci), Montaggio, Passo singolo,
+  Vista da pubblico (3D), Sync con la canzone, Registra i tempi, Tempi passi, Salva PDF.
+  "Stampa intero copione" (finestra dello spettacolo): un PDF con titolo, atto, numero e passi
+  di ogni scena, senza immagini.
+
+CANZONI
+  Metti i file nella cartella "audio" dello spettacolo (pulsante "Cartella canzoni").
+  Il numero all'inizio del nome indica la scena:  00 Ouverture.mp3  ->  scena 0 (intro)
+                                                   01 Titolo.mp3     ->  scena 1   ...
+  Formati: mp3, wav, m4a, ogg, flac.
+
+MODELLI 3D DA IMPORTARE
+  Formato consigliato: .glb (glTF binario). Va bene anche .obj (con .mtl per i colori).
+  Unita' in metri (cm e mm vengono riconosciuti), personaggi in piedi rivolti in avanti.
+  Il programma li converte e li salva alleggeriti nella cartella "modelli" dello spettacolo.

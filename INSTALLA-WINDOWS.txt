@@ -1,0 +1,23 @@
+TEATROAPP — INSTALLAZIONE RAPIDA (WINDOWS)
+==========================================
+
+1. Apri il browser su:
+   https://github.com/MatteRoma91/TEATRO/releases
+
+2. Nella release piu' recente, scarica il file:
+   TeatroApp-*-Windows-x64.zip
+
+3. Tasto destro sullo zip -> Estrai tutto...
+   Scegli una cartella semplice, es. C:\TeatroApp
+
+4. Dentro la cartella estratta, fai doppio clic su:
+   TeatroApp.exe
+
+5. Al primo avvio puoi creare un nuovo spettacolo o importare uno zip
+   esportato da un altro PC.
+
+NON serve installare MATLAB ne' Python.
+Windows Defender potrebbe chiedere conferma la prima volta (app non firmata).
+
+Per aggiornare: scarica lo zip della release nuova e sostituisci la cartella
+(mantieni la sottocartella spettacoli\ se vuoi conservare i dati).

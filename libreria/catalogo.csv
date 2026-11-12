@@ -1,0 +1,67 @@
+categoria;id;nome;sessi;colore;larghezza;profondita;altezza
+Sopra;tshirt;T-shirt;MF;f2f2f2;;;
+Sopra;camicia;Camicia;MF;f6f3ec;;;
+Sopra;canotta;Canottiera / top;MF;222222;;;
+Sopra;maglione;Maglione;MF;7a2a2a;;;
+Gilet;gilet;Gilet;MF;3a3a46;;;
+Giacca;giacca;Giacca;MF;2c2c34;;;
+Giacca;giubbotto;Giubbotto corto;MF;4a3626;;;
+Giacca;cappotto;Cappotto lungo;MF;3a3a3e;;;
+Mantello;mantello;Mantello;MF;2a1f3a;;;
+Mantello;mantello_c;Mantello con cappuccio;MF;1c1c1c;;;
+Sotto;jeans;Jeans;MF;3b5b8c;;;
+Sotto;pantaloni;Pantaloni;MF;2c2c34;;;
+Sotto;pantaloni_larghi;Pantaloni larghi;MF;8a8478;;;
+Sotto;pantaloncini;Pantaloncini;MF;c2b48a;;;
+Sotto;gonna;Gonna al ginocchio;MF;2a2a3a;;;
+Sotto;gonna_lunga;Gonna lunga;MF;7a3a4a;;;
+Abito;abito_lungo;Abito lungo;MF;b8344a;;;
+Abito;abito_corto;Abito corto;MF;2a4a8a;;;
+Abito;tunica;Tunica / saio;MF;1a1a1e;;;
+Scarpe;scarpe;Scarpe;MF;2a1c12;;;
+Scarpe;sneakers;Scarpe da ginnastica;MF;f0f0f0;;;
+Scarpe;stivali;Stivali;MF;2a1c10;;;
+Scarpe;tacchi;Scarpe con tacco;MF;1a1a1a;;;
+Accessorio;cintura;Cintura;MF;3a2818;;;
+Accessorio;sciarpa;Sciarpa;MF;b03030;;;
+Capelli;corti;Corti;MF;3a2418;;;
+Capelli;pettinati;Pettinati all'indietro;MF;3a2418;;;
+Capelli;medi;Medi (alle spalle);MF;3a2418;;;
+Capelli;lisci;Lunghi lisci;MF;3a2418;;;
+Capelli;mossi;Lunghi mossi;MF;3a2418;;;
+Capelli;raccolti;Raccolti (chignon);MF;3a2418;;;
+Capelli;dread;Dreadlocks;MF;3a2418;;;
+Barba;baffi;Baffi;MF;2a1e16;;;
+Barba;barba;Barba;MF;2a1e16;;;
+Barba;barba_baffi;Barba e baffi;MF;2a1e16;;;
+Cappello;fedora;Cappello a tesa;MF;2a2a2a;;;
+Cappello;coppola;Coppola;MF;6a5a48;;;
+Cappello;cilindro;Cilindro;MF;111111;;;
+Cappello;berretto;Berretto di lana;MF;8a2a2a;;;
+Cappello;cappuccio;Cappuccio;MF;2a2a2a;;;
+Scenografia;telo;Telo americano;MF;cfc6e6;8.20;0.16;5.12
+Scenografia;pallet;Pallet;MF;b08a5a;1.20;0.80;0.12
+Scenografia;cubo;Cubo su ruote 60x60;MF;2a2a2a;0.60;0.60;0.60
+Scenografia;praticabile;Praticabile 2x1;MF;6a5a48;2.00;1.00;0.41
+Scenografia;scala;Scalinata;MF;5a5048;1.00;1.25;0.90
+Scenografia;panca;Panca;MF;8a6238;1.60;0.35;0.47
+Scenografia;sedia;Sedia;MF;8a6238;0.45;0.45;0.93
+Scenografia;tavolo;Tavolo;MF;8a6238;1.40;0.80;0.76
+Scenografia;colonna;Colonna;MF;b3a68c;0.60;0.60;3.20
+Scenografia;porta;Porta;MF;5a4632;1.20;0.12;2.30
+Scenografia;pannello;Pannello / fondale dipinto;MF;b8b0a0;2.40;0.80;2.50
+Scenografia;letto;Letto;MF;;1.90;0.95;0.83
+Scenografia;bidone;Bidone;MF;;0.60;0.60;1.32
+Scenografia;transenna;Transenna;MF;;1.80;0.60;1.26
+Scenografia;catasta;Catasta di legna;MF;;1.20;0.80;1.06
+Scenografia;carrello;Pedana su ruote;MF;;1.52;0.80;0.55
+Scenografia;sacco;Sacco;MF;;0.56;0.47;1.95
+Scenografia;ruota;Ruota di carro;MF;;1.30;0.50;1.65
+Scenografia;pozzo;Pozzo;MF;;1.11;1.11;1.60
+Scenografia;campane;Campane;MF;;3.00;0.99;1.98
+Scenografia;candele;Candelabri;MF;;0.62;0.35;1.72
+Scenografia;gabbia;Gabbia;MF;;0.96;1.04;1.95
+Scenografia;sbarre;Sbarre;MF;;3.60;0.12;2.30
+Scenografia;patibolo;Patibolo;MF;;2.38;1.60;3.22
+Scenografia;trave;Trave;MF;;3.10;0.50;3.60
+Scenografia;luna;Luna;MF;;1.09;0.16;2.45
